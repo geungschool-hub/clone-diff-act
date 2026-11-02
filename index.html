@@ -269,27 +269,27 @@ html:not(.unlocked) #draftGate{display:flex;}
     <div class="anicap" id="treeCap">아래 줄의 세포(A~H)를 누르시오. 그 세포가 전구세포에서 어떤 길을 거쳐 왔는지와 가진 전사 인자가 보인다.</div>
   </div>
 
-  <!-- ══ ⑥ 연습 문제 ══ -->
-  <div class="card" data-hub-card="s6">
-    <h2 class="amber" style="border-left-color:var(--amber);background:var(--amber-bg);color:var(--amber-ink);">⑥ 연습 문제 — 전사 인자를 고장 내면?</h2>
+  <!-- ══ ⑥ 직접 고장 내 보기 — 먼저 갖고 논 뒤 ⑦ 연습 문제(교사 11-02 「7번이 6번보다 위로 · 그게 더 맞다」) · 처음부터 열려 있다 ══ -->
+  <div class="card" data-hub-card="s6" id="koPlay">
+    <h2 class="teal">⑥ 🔧 전사 인자를 고장 내 보기</h2>
+    <p class="sub">전사 인자를 눌러 고장 내면 그 전사 인자가 필요한 세포에 ✕ 가 표시된다. 여러 개를 함께 고장 낼 수 있다.</p>
+    <div class="kobar" id="koBar"></div>
+    <div class="stage-wrap" style="margin-top:10px"><svg class="stage" id="koStage" viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="전사 인자를 고장 낸 뒤의 세포분화"></svg></div>
+    <div class="anicap" id="koCap"></div>
+    <div class="secreset"><button type="button" onclick="koOffClear()">↻ ⑥ 모두 고치기</button></div>
+  </div>
+  <!-- ══ ⑦ 연습 문제 ══ -->
+  <div class="card" data-hub-card="s7">
+    <h2 class="amber" style="border-left-color:var(--amber);background:var(--amber-bg);color:var(--amber-ink);">⑦ 연습 문제 — 전사 인자를 고장 내면?</h2>
     <p class="qbox">그림 Ⅱ-15의 전구세포에서 전사 인자 ② 유전자에 돌연변이가 일어나 전사 인자 ②가 만들어지지 않는다. 이때 A~H 중 <u>만들어질 수 없는 세포</u>를 모두 고르시오.</p>
     <div class="chips" id="koChips"></div>
     <div class="btnrow">
       <button type="button" class="btn" id="koCheck" onclick="koCheck()">확인하기</button>
     </div>
     <div class="msg hide" id="koFb"></div>
-    <div class="secreset"><button type="button" onclick="koReset()">↻ ⑥ 다시 풀기</button></div>
+    <div class="secreset"><button type="button" onclick="koReset()">↻ ⑦ 다시 풀기</button></div>
   </div>
 
-  <!-- ══ ⑦ 직접 고장 내 보기 — ⑥ 을 맞힌 뒤에 열린다(답이 그대로 보이므로) · 교사 11-02 「발문과 명확히 분리」 ══ -->
-  <div class="card" data-hub-card="s7" id="koPlay" style="display:none">
-    <h2 class="teal">⑦ 🔧 직접 고장 내 보기</h2>
-    <p class="sub">전사 인자를 눌러 고장 내면 그 전사 인자가 필요한 세포에 ✕ 가 표시된다. 여러 개를 함께 고장 낼 수 있다.</p>
-    <div class="kobar" id="koBar"></div>
-    <div class="stage-wrap" style="margin-top:10px"><svg class="stage" id="koStage" viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="전사 인자를 고장 낸 뒤의 세포분화"></svg></div>
-    <div class="anicap" id="koCap"></div>
-    <div class="secreset"><button type="button" onclick="koOffClear()">↻ ⑦ 모두 고치기</button></div>
-  </div>
   <div class="pagenext left"><button type="button" class="btn ghost big" onclick="goPage(1, true)">◀ 1쪽 · 탐구활동으로</button></div>
   </div><!-- /page2 -->
 
@@ -609,8 +609,6 @@ function renderKo(){
     return '<button type="button" class="chip' + (state.ko.indexOf(c.n) >= 0 ? ' on' : '') + '"' + (state.koDone ? ' disabled' : '') + ' onclick="koToggle(&#39;' + c.n + '&#39;)" aria-pressed="' + (state.ko.indexOf(c.n) >= 0) + '">' + c.n + '</button>';
   }).join('');
   $('koCheck').disabled = state.koDone;
-  $('koPlay').style.display = state.koDone ? '' : 'none';
-  if (!state.koDone) return;
   $('koStage').innerHTML = treeSvg(-1, state.koOff);
   $('koBar').innerHTML = '고장 낼 전사 인자: ' + [1, 2, 3].map(function(t){
     return '<button type="button" class="ko' + (state.koOff.indexOf(t) >= 0 ? ' on' : '') + '" onclick="koOffToggle(' + t + ')">' + (state.koOff.indexOf(t) >= 0 ? '🔧 ' : '') + '전사 인자 ' + '①②③'.charAt(t - 1) + '</button>';
@@ -628,10 +626,10 @@ function koCheck(){
   var m = $('koFb');
   if (!state.ko.length){ m.className = 'msg warn'; m.innerHTML = '세포를 하나 이상 고르시오.'; return; }
   var r = judgeKo(state.ko);
-  if (window.hubTrack) window.hubTrack('s6', 'ko', state.ko.slice().sort().join(''));
+  if (window.hubTrack) window.hubTrack('s7', 'ko', state.ko.slice().sort().join(''));
   if (r.ok){
-    state.koDone = true; state.koOff = [2]; saveState();
-    m.className = 'msg good'; m.innerHTML = '✅ 옳다. C, D, G, H 세포는 모두 전사 인자 ②를 가져야 만들어지는 세포이다. 전사 인자 ②가 없으면 이 세포들이 될 세포는 ②를 얻지 못한 채 분열한다. 아래 ⑦ 에서 다른 전사 인자도 고장 내 보시오.';
+    state.koDone = true; saveState();
+    m.className = 'msg good'; m.innerHTML = '✅ 옳다. C, D, G, H 세포는 모두 전사 인자 ②를 가져야 만들어지는 세포이다. 전사 인자 ②가 없으면 이 세포들이 될 세포는 ②를 얻지 못한 채 분열한다.';
     renderKo(); return;
   }
   m.className = 'msg bad';
@@ -640,7 +638,7 @@ function koCheck(){
 }
 function koOffToggle(t){ var i = state.koOff.indexOf(t); if (i >= 0) state.koOff.splice(i, 1); else state.koOff.push(t); state.koOff.sort(); saveState(); renderKo(); }
 function koOffClear(){ state.koOff = []; saveState(); renderKo(); }
-function koReset(){ state.ko = []; state.koDone = false; state.koOff = []; saveState(); renderKo(); var m = $('koFb'); if (m) m.className = 'msg hide'; }
+function koReset(){ state.ko = []; state.koDone = false; saveState(); renderKo(); var m = $('koFb'); if (m) m.className = 'msg hide'; }
 
 /* 쪽 넘기기 — 넘기면 맨 위로 */
 function goPage(n, top){
