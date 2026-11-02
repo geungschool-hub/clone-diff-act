@@ -796,8 +796,7 @@ window.addEventListener('focus', renderWho);
         for (var i = 0; i < 16; i++) d += abc[r[i] % 36];
         try { if (ls) ls.setItem('hubstats_dev', d); } catch (e) {}
       }
-      var t = false;
-      try { t = !!ls && ls.getItem('hubstats_teacher') === '1'; } catch (e) {}
+      var t = m === 'te';   /* 교사 = 교사용 계정으로 로그인한 브라우저(VER 5 · 2026-11-02). 옛 「교사 기기 표시」는 쓰지 않는다 */
       (quick ? Promise.resolve('unknown') : network()).then(function(n){
         return fetch(DB + '/visits.json', {
           method: 'POST', keepalive: true,
@@ -832,7 +831,7 @@ window.addEventListener('focus', renderWho);
      ★기록하는 것은 「들어감 · 머문 시간 · 다시 하기」뿐이다. 정답·힌트는 기록하지 않는다(작업노트/방법_활동기록_어디에남길것인가.md).
      ★이름 전체는 기기에 남기지 않는다(학번 + 성 첫 글자만). 기록 칸(track)에는 이름·학번이 없다(uid 만). */
   var APP = 'clone-diff-act';
-  var VER = 4;   /* 2: 익명 선택 기기에 남김 · PIN 분실 안내 · 카드 고정 키(data-hub-card) · 3: 접속 기록에 로그인 상태 m(__hubMode) · 4: 작성 내용 제출(hubSubmit) + 추가 동의 ag2 */
+  var VER = 5;   /* 2: 익명 선택 기기에 남김 · PIN 분실 안내 · 카드 고정 키(data-hub-card) · 3: 접속 기록에 로그인 상태 m(__hubMode) · 4: 작성 내용 제출(hubSubmit) + 추가 동의 ag2 · 5: 교사 = 교사용 계정 로그인(교사 기기 표시를 없앰) */
   var KEY = 'AIzaSyDNsHgzaruofl82oqrEb7GGkJhv8M04_YY';
   var DB = 'https://geung-hub-stats-default-rtdb.asia-southeast1.firebasedatabase.app';
   var IDT = 'https://identitytoolkit.googleapis.com/v1/accounts:';
@@ -840,6 +839,11 @@ window.addEventListener('focus', renderWho);
   var HOST = 'geungschool-hub.github.io';
   var SCHOOLS = [{ v: 'hyehwa26', t: '혜화여자고등학교' }];   /* 값에 학년도 — 학번은 해마다 다른 학생에게 간다 */
   var PW_SUFFIX = '#gh26';
+  /* 교사용 계정 — 명단의 시범 계정(강좌 Z). 이 계정으로 로그인한 브라우저를 교사로 본다: 접속 기록 m=te · 과학허브에 교사 화면 카드.
+     ★교사 지시 2026-11-02: 「교사용 기기 확인을 교사용 계정이랑 같은 걸로 · 분리할 이유가 없다」. 따로 있던 교사 기기 표시(hubstats_teacher)는 없앴다.
+     학번은 비밀이 아니다(명단에서 이름은 「교사용」) — 학번이 바뀌면 과학허브 index.html 의 TEACHER_ID 도 함께 바꾼다 */
+  var TEACHER = { sc: 'hyehwa26', id: '20100' };
+  function isTeacher(m){ return !!m && m.sc === TEACHER.sc && m.id === TEACHER.id; }
   var LS_AUTH = 'hubauth_v1', SS_FB = 'hubgate_fb', LS_ANON = 'hubanon_until';   /* 익명 선택은 기기에 ANON_MS 동안 남는다(탭마다 다시 묻지 않게) */
   var T_STEP = 10000, T_FALLBACK = 10000, ENTER_MS = 5000, IDLE_MS = 60000, FLUSH_MS = 60000, ANON_MS = 4 * 3600000;
   /* 개인정보 수집·이용 동의 — 처음 로그인(PIN 을 정할 때)에만 받는다. 동의 시각은 users/{uid}/ag(서버 시각)에 남는다.
@@ -1111,7 +1115,7 @@ window.addEventListener('focus', renderWho);
     var go = D.getElementById('hubl-go'); if (go) go.disabled = true;
     msg('확인하고 있다…', 'info');
     doLogin(f).then(function(){
-      W.__hubMode = 'in'; closeGate(); badge(); toast(me.tag + ' 으로 기록한다.'); startTrack();
+      W.__hubMode = isTeacher(me) ? 'te' : 'in'; closeGate(); badge(); toast(me.tag + ' 으로 기록한다.'); startTrack();
     }, function(e){
       if (e && e.timeout){ fallback(); return; }
       msg(typeof e === 'string' ? e : '로그인하지 못했다. 다시 시도하시오.', /^처음 로그인/.test(e) ? 'info' : 'bad');   /* 처음 로그인 안내는 오류가 아니다 */
@@ -1353,11 +1357,11 @@ window.addEventListener('focus', renderWho);
   /* ── 시작 ── */
   function boot(){
     try {
-      if (lsGet('hubstats_teacher') === '1'){ W.__hubMode = 'te'; return; }                       /* 교사 기기 — 묻지 않고 기록하지 않는다 */
+      lsSet('hubstats_teacher', null);                                         /* 옛 교사 기기 표시(VER 4 까지) — 지운다. 교사는 교사용 계정으로 로그인한다 */
       try { me = JSON.parse(lsGet(LS_AUTH) || 'null'); } catch (e) { me = null; }
       if (me && me.uid && me.refreshToken && me.tag){
         badge(); toast(me.tag + ' 으로 기록한다.');
-        W.__hubMode = 'in'; startTrack();                                     /* 서버를 기다리지 않는다 — 토큰은 보낼 때 갱신 */
+        W.__hubMode = isTeacher(me) ? 'te' : 'in'; startTrack();             /* 서버를 기다리지 않는다 — 토큰은 보낼 때 갱신 */
         return;
       }
       me = null;
