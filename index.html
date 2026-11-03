@@ -103,6 +103,11 @@ h3{font-size:16.5px;margin:16px 0 8px;}
 .q textarea{width:100%;min-height:120px;font:inherit;font-size:16px;line-height:1.65;padding:10px 12px;border:1.5px solid #C8CDD4;border-radius:10px;resize:vertical;background:#fff;color:var(--ink);}
 .q textarea:focus{outline:none;border-color:var(--blue);}
 .q .cnt{font-size:13.5px;color:var(--sub);text-align:right;margin-top:2px;}
+/* 2·3번 단계 — 큰 발문 아래에 들여 쓴 작은 칸 (교사 11-03) */
+.qg{font-weight:700;font-size:16.5px;margin:22px 0 10px;padding-left:1.6em;text-indent:-1.6em;line-height:1.6;}
+.q.sub{margin-left:1.6em;padding-left:12px;border-left:3px solid #DDE3EA;}
+.q.sub .qt{font-weight:600;font-size:16px;padding-left:2.4em;text-indent:-2.4em;}
+.q.sub textarea{min-height:76px;}
 .who{border-radius:9px;padding:10px 13px;font-size:15.5px;line-height:1.6;margin:0 0 14px;}
 .who.in{background:var(--green-bg);border-left:4px solid var(--green);}
 .who.out{background:var(--amber-bg);border-left:4px solid var(--amber);}
@@ -313,16 +318,33 @@ html:not(.unlocked) #draftGate{display:flex;}
 'use strict';
 /* ══════════════════════════════════════════════════════════════
    1. 자료 — 79쪽 정리하기 1·2·3 (발문은 시험지 문체로 옮겼다) · 스스로 평가하기 3줄
-   ★문항 키 q1·q2·q3 는 교사 화면(_접속기록/교사용_과학허브.html SUB_Q)과 짝이다 — 바꾸면 거기도 바꾼다.
+   ★문항 키 q1·q21~q23·q31~q33 은 교사 화면(_접속기록/교사용_과학허브.html SUB_Q)과 짝이다 — 바꾸면 거기도 바꾼다.
    ══════════════════════════════════════════════════════════════ */
 var APP_ID = 'clone-diff-act';
 var LS_KEY = 'clonediff_v1';
 var MAXLEN = 2000;   /* 접속 기록 조각 SUB_MAX · DB 규칙과 같은 값 */
+/* ★2·3번은 단계로 나눴다(교사 11-03 「애들이 2·3번을 어려워한다」) — 가정 → 예상 → 실제 결과와 비교 → 원리.
+   칸 이름 q21 = 2-1 (DB 규칙 /^q[0-9]{1,2}$/ 안). g = 그 칸 앞에 붙는 큰 발문.
+   그 전 양식의 q2·q3 은 LEGACY 로 q23·q33 에 옮겨 담는다(예상 · 원리 자리). */
 var QS = [
-  { k:'q1', t:'1. 복제 양 돌리는 대리모 양과 핵을 제공한 세포를 가진 양 중에 어떤 양과 비슷한지 쓰고, 그렇게 판단한 까닭을 설명하시오.' },
-  { k:'q2', t:'2. 세포의 분화가 유전체의 유전자 구성이 변해 일어난다면, 그림의 식물과 동물 복제 실험의 결과가 어떻게 나올지 예상하여 쓰시오.' },
-  { k:'q3', t:'3. 동물과 식물 복제의 예를 통해 알 수 있는 세포분화의 원리를 추론하여 쓰시오.' }
+  { k:'q1',  g:'1. 복제 양 돌리는 대리모 양과 핵을 제공한 세포를 가진 양 중에 어떤 양과 비슷한지 쓰고, 그렇게 판단한 까닭을 설명하시오.', t:'' },
+  { k:'q21', g:'2. 세포의 분화가 유전체의 유전자 구성이 변해 일어난다고 가정한다. 이 가정에 따라 다음 물음에 답하시오.',
+    t:'2-1. 당근 뿌리 세포와 양의 젖샘 세포는 이미 분화한 세포이다. 가정이 옳다면 이 세포들의 유전체는 어떤 상태이겠는가?' },
+  { k:'q22', t:'2-2. 2-1 과 같은 세포로 완전한 개체 하나를 만들 수 있는가? 그렇게 판단한 까닭과 함께 쓰시오.' },
+  { k:'q23', t:'2-3. 그렇다면 그림의 식물 복제와 동물 복제 실험의 결과는 어떻게 나오겠는가? 예상하여 쓰시오.' },
+  { k:'q31', g:'3. 동물과 식물 복제의 예를 통해 알 수 있는 세포분화의 원리를 다음 순서로 추론하시오.',
+    t:'3-1. 그림의 식물 복제와 동물 복제 실험의 실제 결과는 어떠하였는가?' },
+  { k:'q32', t:'3-2. 3-1 의 결과는 2번의 가정과 맞는가? 이 결과로 알 수 있는, 분화한 세포의 유전체에 대한 사실을 쓰시오.' },
+  { k:'q33', t:'3-3. 한 개체의 세포들은 유전자 구성이 같은데도 모양과 기능이 서로 다르다. 그 까닭을 추론하여 쓰시오.' }
 ];
+var LEGACY = { q2:'q23', q3:'q33' };   /* 이전 칸 → 새 칸 (새 칸이 비어 있을 때만 옮긴다) */
+function liftLegacy(src, dst){
+  if (!src) return;
+  Object.keys(LEGACY).forEach(function(o){
+    var v = src[o], n = LEGACY[o];
+    if (typeof v === 'string' && v.trim() && !String(dst[n] || '').trim()) dst[n] = v.slice(0, MAXLEN);
+  });
+}
 var SELF = [
   '체세포의 핵을 이용한 동물과 식물 복제의 원리를 설명할 수 있는가?',
   '동물과 식물 복제에 관한 동영상을 시청하였는가?',
@@ -332,15 +354,17 @@ var SELF = [
 /* ══════════════════════════════════════════════════════════════
    2. 순수 함수 — 검사가 떼어 쓴다
    ══════════════════════════════════════════════════════════════ */
-function blankState(){ return { a:{ q1:'', q2:'', q3:'' }, self:[false, false, false], subT:0, subA:null, page:1, myo:0, pick:'', ko:[], koDone:false, koOff:[] }; }
+function blankA(){ var a = {}; QS.forEach(function(q){ a[q.k] = ''; }); return a; }
+function blankState(){ return { a:blankA(), self:[false, false, false], subT:0, subA:null, page:1, myo:0, pick:'', ko:[], koDone:false, koOff:[] }; }
 /* 저장본을 믿지 않는다 — 모르는 칸은 버리고, 형이 틀리면 빈 값 */
 function cleanState(raw){
   var s = blankState();
   if (!raw || typeof raw !== 'object') return s;
   QS.forEach(function(q){ var v = raw.a && raw.a[q.k]; if (typeof v === 'string') s.a[q.k] = v.slice(0, MAXLEN); });
+  liftLegacy(raw.a, s.a);
   for (var i = 0; i < SELF.length; i++) s.self[i] = !!(raw.self && raw.self[i] === true);
   if (typeof raw.subT === 'number' && raw.subT > 0) s.subT = raw.subT;
-  if (raw.subA && typeof raw.subA === 'object'){ s.subA = {}; QS.forEach(function(q){ s.subA[q.k] = typeof raw.subA[q.k] === 'string' ? raw.subA[q.k] : ''; }); }
+  if (raw.subA && typeof raw.subA === 'object'){ s.subA = {}; QS.forEach(function(q){ s.subA[q.k] = typeof raw.subA[q.k] === 'string' ? raw.subA[q.k] : ''; }); liftLegacy(raw.subA, s.subA); }
   s.page = raw.page === 2 ? 2 : 1;
   s.myo = (typeof raw.myo === 'number' && raw.myo >= 0 && raw.myo <= MYO_LAST) ? Math.round(raw.myo) : 0;
   s.pick = (typeof raw.pick === 'string' && CELLS.some(function(c){ return c.n === raw.pick; })) ? raw.pick : '';
@@ -377,8 +401,10 @@ function showMsg(cls, html){ var m = $('fb'); if (!m) return; m.className = 'msg
    ══════════════════════════════════════════════════════════════ */
 function buildQs(){
   $('qs').innerHTML = QS.map(function(q){
-    return '<div class="q"><p class="qt">' + esc(q.t) + '</p>' +
-      '<textarea id="ta_' + q.k + '" maxlength="' + MAXLEN + '" aria-label="' + esc(q.t) + '" oninput="onType(&#39;' + q.k + '&#39;)"></textarea>' +
+    var lab = q.t || q.g;
+    return (q.g && q.t ? '<p class="qg">' + esc(q.g) + '</p>' : '') +
+      '<div class="q' + (q.t && q.k !== 'q1' ? ' sub' : '') + '"><p class="qt">' + esc(lab) + '</p>' +
+      '<textarea id="ta_' + q.k + '" maxlength="' + MAXLEN + '" aria-label="' + esc(lab) + '" oninput="onType(&#39;' + q.k + '&#39;)"></textarea>' +
       '<div class="cnt" id="cnt_' + q.k + '"></div></div>';
   }).join('');
   $('self').innerHTML = SELF.map(function(t, i){
@@ -697,7 +723,7 @@ function onHubLogin(){
   if (typeof window.hubLoad !== 'function') return;
   window.hubLoad().then(function(d){
     if (!d || !d.a) { renderAll(); return; }
-    var subA = {}; QS.forEach(function(q){ subA[q.k] = typeof d.a[q.k] === 'string' ? d.a[q.k] : ''; });
+    var subA = {}; QS.forEach(function(q){ subA[q.k] = typeof d.a[q.k] === 'string' ? d.a[q.k] : ''; }); liftLegacy(d.a, subA);
     state.subT = typeof d.t === 'number' ? d.t : state.subT; state.subA = subA;
     if (!filledCount(state.a)){ QS.forEach(function(q){ state.a[q.k] = subA[q.k]; }); fillInputs(); }
     saveState(); renderAll();
